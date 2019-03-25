@@ -1,0 +1,104 @@
+{
+  "data": {
+    "type": "object",
+    "properties": {
+      "title": "APL Sample",
+      "footerHint": "todo",
+      "backgroundImage":{
+        "small": "https://m.media-amazon.com/images/G/01/mobile-apps/dex/alexa/1159540_FR_EMAIL-INCENTIVE_CarouselHeader_960x680_r3_1550050555._CB454518987_.jpg",
+        "large": "https://m.media-amazon.com/images/G/01/mobile-apps/dex/alexa/1159540_FR_EMAIL-INCENTIVE_CarouselHeader_960x680_r3_1550050555._CB454518987_.jpg"
+      },
+      "listItems":[
+        {
+          "id":3,
+          "audio": "todo",
+          "title": "Text Component",
+          "image":{
+            "small": "https://cdn.pixabay.com/photo/2017/11/17/07/56/background-2956789_960_720.jpg",
+            "large": "https://cdn.pixabay.com/photo/2017/11/17/07/56/background-2956789_960_720.jpg"
+          },
+          "x":"62vw",
+          "y":"60vh",
+          "width": "20vw",
+          "height": "20vw"
+        },
+        {
+          "id":4,
+          "audio": "todo",
+          "title": "Image Component",
+          "image":{
+            "small": "https://cdn.pixabay.com/photo/2016/12/23/12/40/night-1927265_960_720.jpg",
+            "large": "https://cdn.pixabay.com/photo/2016/12/23/12/40/night-1927265_960_720.jpg"
+          },
+          "x":"62vw",
+          "y":"60vh",
+          "width": "20vw",
+          "height": "20vw"
+        },
+        {
+          "id":1,
+          "audio": "todo",
+          "title": "Pager vs Sequence",
+          "image":{
+            "small": "https://m.media-amazon.com/images/G/01/mobile-apps/dex/alexa/1159540_FR_EMAIL-INCENTIVE_CarouselHeader_960x680_r3_1550050555._CB454518987_.jpg",
+            "large": "https://m.media-amazon.com/images/G/01/mobile-apps/dex/alexa/1159540_FR_EMAIL-INCENTIVE_CarouselHeader_960x680_r3_1550050555._CB454518987_.jpg"
+          },
+          "x":"32vw",
+          "y":"30vh",
+          "width": "20vw",
+          "height": "20vw"
+        },
+        {
+          "id":2,
+          "audio": "todo",
+          "title": "SpeakList vs SpeakItem",
+          "image":{
+            "small": "https://m.media-amazon.com/images/G/01/mobile-apps/dex/alexa/1159540_FR_EMAIL-INCENTIVE_CarouselHeader_960x680_r3_1550050555._CB454518987_.jpg",
+            "large": "https://m.media-amazon.com/images/G/01/mobile-apps/dex/alexa/1159540_FR_EMAIL-INCENTIVE_CarouselHeader_960x680_r3_1550050555._CB454518987_.jpg"
+          },
+          "x":"62vw",
+          "y":"60vh",
+          "width": "20vw",
+          "height": "20vw"
+        },
+        {
+          "id":4,
+          "audio": "todo",
+          "title": "todo item 4",
+          "image":{
+            "small": "https://m.media-amazon.com/images/G/01/mobile-apps/dex/alexa/1159540_FR_EMAIL-INCENTIVE_CarouselHeader_960x680_r3_1550050555._CB454518987_.jpg",
+            "large": "https://m.media-amazon.com/images/G/01/mobile-apps/dex/alexa/1159540_FR_EMAIL-INCENTIVE_CarouselHeader_960x680_r3_1550050555._CB454518987_.jpg"
+          },
+          "x":"62vw",
+          "y":"60vh",
+          "width": "20vw",
+          "height": "20vw"
+        },
+        {
+          "id":5,
+          "audio": "todo",
+          "title": "todo item 5",
+          "image":{
+            "small": "https://m.media-amazon.com/images/G/01/mobile-apps/dex/alexa/1159540_FR_EMAIL-INCENTIVE_CarouselHeader_960x680_r3_1550050555._CB454518987_.jpg",
+            "large": "https://m.media-amazon.com/images/G/01/mobile-apps/dex/alexa/1159540_FR_EMAIL-INCENTIVE_CarouselHeader_960x680_r3_1550050555._CB454518987_.jpg"
+          },
+          "x":"62vw",
+          "y":"60vh",
+          "width": "20vw",
+          "height": "20vw"
+        }
+      ]
+    },
+    "transformers": [
+      {
+        "inputPath": "listItems[*].title",
+        "outputName": "titleSpeech",
+        "transformer": "ssmlToSpeech"
+      },
+      {
+        "inputPath": "footerHint",
+        "transformer": "textToHint"
+      }
+    ]
+  }
+}

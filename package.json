@@ -8,7 +8,8 @@
     "jovo-framework": "^2.1.4",
     "jovo-platform-alexa": "^2.0.2",
     "jovo-platform-googleassistant": "^2.0.2",
-    "jovo-plugin-debugger": "^2.0.2"
+    "jovo-plugin-debugger": "^2.0.2",
+    "jsonfile": "^5.0.0"
   },
   "devDependencies": {
     "gulp": "^4.0.0",
@@ -26,12 +27,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jovotech/jovo-sample-voice-app-nodejs.git"
+    "url": "git@github.com:shirkalab/jovo-alexa-apl-sample.git"
   },
   "author": "Jovo",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/jovotech/jovo-sample-voice-app-nodejs/issues"
+    "url": "https://github.com/shirkalab/jovo-alexa-apl-sample"
   },
-  "homepage": "https://github.com/jovotech/jovo-sample-voice-app-nodejs#readme"
+  "homepage": "https://github.com/shirkalab/jovo-alexa-apl-sample"
 }

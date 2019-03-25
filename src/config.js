@@ -3,10 +3,13 @@
 // ------------------------------------------------------------------
 
 module.exports = {
-    logging: true,
+    logging: false,
  
     intentMap: {
-       'AMAZON.StopIntent': 'END',
+        'AMAZON.StopIntent': 'END',
+        'AMAZON.CancelIntent': 'END',
+        'AMAZON.HelpIntent': 'HelpIntent',
+        'homeIntent': 'Welcome'
     },
  
     db: {

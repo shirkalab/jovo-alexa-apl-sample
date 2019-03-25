@@ -1,0 +1,147 @@
+{
+  "type": "APL",
+  "version": "1.0",
+  "theme": "dark",
+  "import": [
+    {
+      "name": "alexa-layouts",
+      "version": "1.0.0"
+    }
+  ],
+  "resources": [],
+  "styles": {
+    "hitButton": {
+      "values": [
+        {
+          "when": "${state.pressed}",
+          "opacity": 0.5
+        },
+        {
+          "when": "${state.focused}",
+          "opacity": 1
+        },
+        {
+          "when": "${state.disabled}",
+          "opacity": 0
+        }
+      ]
+    }
+  },
+  "layouts": {
+    "homeTemplate": {
+      "parameters": [
+        "title",
+        "backgroundImage",
+        "listItems",
+        "footerHint"
+      ],
+      "items": [
+        {
+          "type": "Container",
+          "height": "100vh",
+          "width": "100vw",
+          "items": [
+            {
+              "type": "Image",
+              "position": "absolute",
+              "source": "${backgroundImage.large}",
+              "scale": "best-fill",
+              "width": "100vw",
+              "height": "100vh",
+              "overlayColor": "rgba(0, 0, 0, 0.2)",
+              "filters": [
+                {
+                  "type": "Blur",
+                  "radius": "30dp"
+                }
+              ]
+            },
+            {
+              "type": "AlexaHeader",
+              "headerTitle": "${title}",
+              "headerBackgroundColor": "grey",
+              "headerBackButton": true,
+              "headerNavigationAction": "menu",
+              "width": "100vw"
+            },
+            {
+              "type": "Container",
+              "width": "100vw",
+              "height": "100vh",
+              "alignItems": "center",
+              "items": [
+                {
+                  "type": "Sequence",
+                  "width": "100vw",
+                  "height": "100vh",
+                  "scrollDirection": "vertical",
+                  "item": [
+                    {
+                      "type": "Text",
+                      "fontSize": "30",
+                      "width": "100vw",
+                      "textAlign": "left",
+                      "text": "Text align left width 100vw"
+                    },
+                    {
+                      "type": "Text",
+                      "fontSize": "30",
+                      "width": "100vw",
+                      "textAlign": "left",
+                      "text": "Text with <i>HTML</i> <b>tag</b>"
+                    },
+                    {
+                      "type": "Text",
+                      "fontSize": "30",
+                      "width": "100vw",
+                      "textAlign": "center",
+                      "text": "Text center width 100vw"
+                    },
+                    {
+                      "type": "Text",
+                      "fontSize": "30",
+                      "width": "100vw",
+                      "height": "20vh",
+                      "textAlign": "center",
+                      "textAlignVertical": "center",
+                      "text": "Text center width 100vw height 20"
+                    },
+                    {
+                      "type": "Text",
+                      "fontSize": "30",
+                      "width": "100vw",
+                      "textAlign": "right",
+                      "text": "Text align right width 100vw"
+                    },
+                    {
+                      "type": "Text",
+                      "fontSize": "30",
+                      "width": "40vw",
+                      "textAlign": "left",
+                      "maxLines": 1,
+                      "text": "Text align left width 50vw 1 line"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "mainTemplate": {
+    "parameters": [
+      "payload"
+    ],
+    "item": [
+      {
+        "type": "homeTemplate",
+        "title": "${payload.data.properties.title}",
+        "backgroundImage": "${payload.data.properties.backgroundImage}",
+        "listItems": "${payload.data.properties.listItems}",
+        "footerHint": "${payload.data.properties.footerHint}"
+      }
+    ]
+  }
+}

@@ -1,0 +1,628 @@
+AWSTemplateFormatVersion: 2010-09-09
+Conditions:
+  CreateCodeBuildResources: !Equals
+  - true
+  - true
+Description: A Node.js web application deployed to AWS Lambda.
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+    - Label:
+        default: Application
+      Parameters:
+      - ProjectId
+  CodeBuildImage: aws/codebuild/eb-nodejs-6.10.0-amazonlinux-64:4.0.0
+  CodeBuildImageOverride: aws/codebuild/eb-nodejs-6.10.0-amazonlinux-64:4.0.0
+
+Parameters:
+  AppName:
+    Description: Name of the application.
+    MaxLength: 100
+    MinLength: 1
+    Type: String
+  ProjectId:
+    AllowedPattern: ^[a-z]([a-z0-9-])+$
+    ConstraintDescription: Project IDs must be between 2 and 15 characters, begin with a letter, and only contain lowercase letters, numbers, and hyphens (-).
+    Description: Project ID.
+    MaxLength: 15
+    MinLength: 2
+    Type: String
+  BranchName:
+    Description: GitHub branch name
+    Type: String
+    Default: master
+  RepositoryName:
+    Description: GitHub repository name
+    Type: String
+    Default: jovo-alexa-apl-sample
+  GitHubOwner:
+    Type: String
+  GitHubSecret:
+    Type: String
+    NoEcho: true
+  GitHubOAuthToken:
+    Type: String
+    NoEcho: true
+Resources:
+  CloudFormationTrustRole:
+    Description: Creating service role in IAM for AWS CloudFormation
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Action: sts:AssumeRole
+          Effect: Allow
+          Principal:
+            Service:
+            - cloudformation.amazonaws.com
+      Path: /
+      Policies:
+      - PolicyDocument:
+          Statement:
+          - Action:
+            - s3:PutObject
+            - s3:GetObject
+            - s3:GetObjectVersion
+            Effect: Allow
+            Resource:
+            - 'arn:aws:s3:::ops-pipeline-eu-west-1'
+            - 'arn:aws:s3:::ops-pipeline-eu-west-1/*'
+            - 'arn:aws:s3:::ops-pipeline-us-east-1'
+            - 'arn:aws:s3:::ops-pipeline-us-east-1/*'
+          - Action:
+            - codestar:SyncResources
+            - lambda:CreateFunction
+            - lambda:DeleteFunction
+            - lambda:AddPermission
+            - lambda:UpdateFunction
+            - lambda:UpdateFunctionCode
+            - lambda:GetFunction
+            - lambda:GetFunctionConfiguration
+            - lambda:UpdateFunctionConfiguration
+            - lambda:RemovePermission
+            - lambda:listTags
+            - lambda:TagResource
+            - lambda:UntagResource
+            - lambda:PutFunctionConcurrency
+            - lambda:ListVersionsByFunction
+            - lambda:PublishVersion
+            - lambda:UpdateAlias
+            - events:DescribeRule
+            - lambda:CreateAlias
+            - lambda:DeleteAlias
+            - kinesis:CreateStream
+            - kinesis:DeleteStream
+            - kinesis:DescribeStream
+            - config:DescribeConfigRules
+            - config:PutConfigRule
+            - config:DeleteConfigRule
+            Effect: Allow
+            Resource: '*'
+          - Action:
+            - iam:PassRole
+            Effect: Allow
+            Resource:
+            - !GetAtt
+              - LambdaTrustRole
+              - Arn
+          - Action:
+            - cloudformation:CreateChangeSet
+            Effect: Allow
+            Resource:
+            - arn:aws:cloudformation:eu-west-1:aws:transform/Serverless-2016-10-31
+            - arn:aws:cloudformation:eu-west-1:aws:transform/CodeStar
+            - arn:aws:cloudformation:us-east-1:aws:transform/Serverless-2016-10-31
+            - arn:aws:cloudformation:us-east-1:aws:transform/CodeStar
+        PolicyName: CodeStarWorkerCloudFormationRolePolicy
+      RoleName: !Join
+      - '-'
+      - - CodeStarWorker
+        - !Ref 'ProjectId'
+        - CloudFormation
+    Type: AWS::IAM::Role
+  CodeBuildPolicy:
+    Condition: CreateCodeBuildResources
+    Description: Setting IAM policy for service role for pipeline
+    Properties:
+      PolicyDocument:
+        Statement:
+        - Action:
+          - logs:CreateLogGroup
+          - logs:CreateLogStream
+          - logs:PutLogEvents
+          Effect: Allow
+          Resource: '*'
+        - Action:
+          - s3:PutObject
+          - s3:GetObject
+          - s3:GetObjectVersion
+          Effect: Allow
+          Resource:
+          - 'arn:aws:s3:::ops-pipeline-eu-west-1'
+          - 'arn:aws:s3:::ops-pipeline-eu-west-1/*'
+          - 'arn:aws:s3:::ops-pipeline-us-east-1'
+          - 'arn:aws:s3:::ops-pipeline-us-east-1/*'
+
+        - Action:
+          - codecommit:GitPull
+          Effect: Allow
+          Resource:
+          - !Join
+            - ':'
+            - - arn
+              - aws
+              - codecommit
+              - !Ref 'AWS::Region'
+              - !Ref 'AWS::AccountId'
+              - !Ref 'RepositoryName'
+        - Action:
+          - kms:GenerateDataKey*
+          - kms:Encrypt
+          - kms:Decrypt
+          Effect: Allow
+          Resource:
+          - !Join
+            - ':'
+            - - arn:aws:kms
+              - !Ref 'AWS::Region'
+              - !Ref 'AWS::AccountId'
+              - !Join
+                - /
+                - - alias
+                  - aws/s3
+      PolicyName: CodeStarWorkerCodeBuildPolicy
+      Roles:
+      - !Ref 'CodeBuildRole'
+    Type: AWS::IAM::Policy
+  CodeBuildProject:
+    Condition: CreateCodeBuildResources
+    DependsOn:
+    - CodeBuildPolicy
+    Properties:
+      Artifacts:
+        Packaging: zip
+        Type: codepipeline
+      Description: !Join
+      - ''
+      - - 'AWS CodeStar created CodeBuild Project for '
+        - !Ref 'AppName'
+      Environment:
+        ComputeType: small
+        EnvironmentVariables:
+        - Name: S3_BUCKET
+          Value: 'ops-pipeline-eu-west-1'
+        - Name: S3_BUCKETUS
+          Value: 'ops-pipeline-us-east-1'
+        Image: aws/codebuild/nodejs:8.11.0
+
+        Type: container
+      Name: !Ref 'ProjectId'
+      ServiceRole: !Ref 'CodeBuildRole'
+      Source:
+        Type: codepipeline
+    Type: AWS::CodeBuild::Project
+  CodeBuildRole:
+    Condition: CreateCodeBuildResources
+    Description: Creating service role in IAM
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Action: sts:AssumeRole
+          Effect: Allow
+          Principal:
+            Service: codebuild.amazonaws.com
+      Path: /
+      RoleName: !Join
+      - '-'
+      - - CodeStarWorker
+        - !Ref 'ProjectId'
+        - CodeBuild
+    Type: AWS::IAM::Role
+  CodePipelineTrustRole:
+    Description: Creating service role in IAM for AWS CodePipeline
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Action: sts:AssumeRole
+          Effect: Allow
+          Principal:
+            Service:
+            - codepipeline.amazonaws.com
+          Sid: 1
+      Path: /
+      Policies:
+      - PolicyDocument:
+          Statement:
+          - Action:
+            - s3:GetObject
+            - s3:GetObjectVersion
+            - s3:GetBucketVersioning
+            - s3:PutObject
+            Effect: Allow
+            Resource:
+            - 'arn:aws:s3:::ops-pipeline-eu-west-1'
+            - 'arn:aws:s3:::ops-pipeline-eu-west-1/*'
+            - 'arn:aws:s3:::ops-pipeline-us-east-1'
+            - 'arn:aws:s3:::ops-pipeline-us-east-1/*'
+          - Action:
+            - codecommit:CancelUploadArchive
+            - codecommit:GetBranch
+            - codecommit:GetCommit
+            - codecommit:GetUploadArchiveStatus
+            - codecommit:UploadArchive
+            Effect: Allow
+            Resource:
+            - !Join
+              - ':'
+              - - arn
+                - aws
+                - codecommit
+                - !Ref 'AWS::Region'
+                - !Ref 'AWS::AccountId'
+                - !Ref 'RepositoryName'
+          - Action:
+            - codebuild:StartBuild
+            - codebuild:BatchGetBuilds
+            - codebuild:StopBuild
+            Effect: Allow
+            Resource:
+            - !GetAtt 'CodeBuildProject.Arn'
+          - Action:
+            - cloudformation:DescribeStacks
+            - cloudformation:DescribeChangeSet
+            - cloudformation:CreateChangeSet
+            - cloudformation:DeleteChangeSet
+            - cloudformation:ExecuteChangeSet
+            Effect: Allow
+            Resource:
+            - !Join
+              - ':'
+              - - arn
+                - aws
+                - cloudformation
+                - '*'
+                - !Ref 'AWS::AccountId'
+                - !Join
+                  - /
+                  - - stack
+                    - !Join
+                      - '-'
+                      - - awscodestar
+                        - !Ref 'ProjectId'
+                        - lambda
+                    - '*'
+          - Action:
+            - iam:PassRole
+            Effect: Allow
+            Resource:
+            - !GetAtt
+              - CloudFormationTrustRole
+              - Arn
+        PolicyName: CodeStarWorkerCodePipelineRolePolicy
+      RoleName: !Join
+      - '-'
+      - - CodeStarWorker
+        - !Ref 'ProjectId'
+        - CodePipeline
+    Type: AWS::IAM::Role
+  LambdaTrustRole:
+    Description: Creating service role in IAM for AWS Lambda
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Action: sts:AssumeRole
+          Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      - arn:aws:iam::aws:policy/service-role/AWSConfigRulesExecutionRole
+      Path: /
+      Policies:
+      - PolicyDocument:
+          Statement:
+          - Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+            Effect: Allow
+            Resource: '*'
+          - Action:
+            - dynamodb:GetItem
+            - dynamodb:DeleteItem
+            - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            Effect: Allow
+            Resource: '*'
+          Version: 2012-10-17
+        PolicyName: CodeStarLambdaWorkerPolicy
+      RoleName: !Join
+      - '-'
+      - - CodeStarWorker
+        - !Ref 'ProjectId'
+        - Lambda
+    Type: AWS::IAM::Role
+  ProjectPipeline:
+    DependsOn:
+    - LambdaTrustRole
+    - CodePipelineTrustRole
+    - CodeBuildProject
+    - CloudFormationTrustRole
+    Description: Creating a deployment pipeline for your project in AWS CodePipeline
+    Properties:
+      ArtifactStores:
+        - Region: us-east-1
+          ArtifactStore:
+            Type: S3
+            Location: 'ops-pipeline-us-east-1'
+        - Region: eu-west-1
+          ArtifactStore:
+            Type: S3
+            Location: 'ops-pipeline-eu-west-1'
+
+      Name: !Join
+      - '-'
+      - - !Ref 'ProjectId'
+        - Pipeline
+      RoleArn: !GetAtt
+      - CodePipelineTrustRole
+      - Arn
+      Stages:
+      - Actions:
+        - ActionTypeId:
+            Category: Source
+            Owner: ThirdParty
+            Version: 1
+            Provider: GitHub
+          OutputArtifacts:
+          - Name: !Join
+            - '-'
+            - - !Ref 'ProjectId'
+              - SourceArtifact
+          Configuration:
+            Owner: shirkalab
+            Repo: !Ref RepositoryName
+            Branch: !Ref BranchName
+            OAuthToken: !Ref GitHubOAuthToken
+            PollForSourceChanges: false
+          Name: ApplicationSource
+          RunOrder: 1
+        Name: Source
+
+
+
+      - Actions:
+        - ActionTypeId:
+            Category: Build
+            Owner: AWS
+            Provider: CodeBuild
+            Version: 1
+          Configuration:
+            ProjectName: !Ref 'ProjectId'
+          InputArtifacts:
+          - Name: !Join
+            - '-'
+            - - !Ref 'ProjectId'
+              - SourceArtifact
+          Name: PackageExport
+          OutputArtifacts:
+          - Name: !Join
+            - '-'
+            - - !Ref 'ProjectId'
+              - BuildArtifact
+          RunOrder: 1
+        Name: Build
+      - Actions:
+        - ActionTypeId:
+            Category: Deploy
+            Owner: AWS
+            Provider: CloudFormation
+            Version: 1
+          Configuration:
+            ActionMode: CHANGE_SET_REPLACE
+            Capabilities: CAPABILITY_IAM
+            ChangeSetName: pipeline-changeset
+            ParameterOverrides: !Join
+            - ''
+            - - '{"ProjectId":"'
+              - !Ref 'ProjectId'
+              - '"}'
+            RoleArn: !GetAtt
+            - CloudFormationTrustRole
+            - Arn
+            StackName: !Join
+            - '-'
+            - - awscodestar
+              - !Ref 'ProjectId'
+              - lambda
+            TemplatePath: !Join
+            - ''
+            - - !Ref 'ProjectId'
+              - -BuildArtifact
+              - ::template-export.yml
+          InputArtifacts:
+          - Name: !Join
+            - '-'
+            - - !Ref 'ProjectId'
+              - BuildArtifact
+          Name: GenerateChangeSet
+          OutputArtifacts: []
+          RunOrder: 1
+        - ActionTypeId:
+            Category: Deploy
+            Owner: AWS
+            Provider: CloudFormation
+            Version: 1
+          Configuration:
+            ActionMode: CHANGE_SET_EXECUTE
+            ChangeSetName: pipeline-changeset
+            StackName: !Join
+            - '-'
+            - - awscodestar
+              - !Ref 'ProjectId'
+              - lambda
+          InputArtifacts: []
+          Name: ExecuteChangeSet
+          OutputArtifacts: []
+          RunOrder: 2
+          #US:
+        - ActionTypeId:
+            Category: Deploy
+            Owner: AWS
+            Provider: CloudFormation
+            Version: 1
+          Configuration:
+            ActionMode: CHANGE_SET_REPLACE
+            Capabilities: CAPABILITY_IAM
+            ChangeSetName: pipeline-changeset-US
+            ParameterOverrides: !Join
+            - ''
+            - - '{"ProjectId":"'
+              - !Ref 'ProjectId'
+              - '"}'
+            RoleArn: !GetAtt
+            - CloudFormationTrustRole
+            - Arn
+            StackName: !Join
+            - '-'
+            - - awscodestar
+              - !Ref 'ProjectId'
+              - lambda
+            TemplatePath: !Join
+            - ''
+            - - !Ref 'ProjectId'
+              - -BuildArtifact
+              - ::template-export-us.yml
+          InputArtifacts:
+          - Name: !Join
+            - '-'
+            - - !Ref 'ProjectId'
+              - BuildArtifact
+          Name: GenerateChangeSet-US
+          Region: us-east-1
+          OutputArtifacts: []
+          RunOrder: 1
+        - ActionTypeId:
+            Category: Deploy
+            Owner: AWS
+            Provider: CloudFormation
+            Version: 1
+          Configuration:
+            ActionMode: CHANGE_SET_EXECUTE
+            ChangeSetName: pipeline-changeset-US
+            StackName: !Join
+            - '-'
+            - - awscodestar
+              - !Ref 'ProjectId'
+              - lambda
+          InputArtifacts: []
+          Name: ExecuteChangeSet-US
+          Region: us-east-1
+          OutputArtifacts: []
+          RunOrder: 2
+
+        Name: Deploy
+    Type: AWS::CodePipeline::Pipeline
+  S3ArtifactBucketPolicy:
+    Description: Setting Amazon S3 bucket policy for AWS CodePipeline access
+    Properties:
+      Bucket: 'ops-pipeline-eu-west-1'
+      PolicyDocument:
+        Id: SSEAndSSLPolicy
+        Statement:
+        - Action:
+          - s3:GetObject
+          - s3:GetObjectVersion
+          - s3:GetBucketVersioning
+          Condition:
+            Bool:
+              aws:SecureTransport: false
+          Effect: Allow
+          Principal:
+            AWS:
+            - !GetAtt
+              - CodePipelineTrustRole
+              - Arn
+            - !GetAtt
+              - CodeBuildRole
+              - Arn
+            - !GetAtt
+              - CloudFormationTrustRole
+              - Arn
+          Resource:
+          - 'arn:aws:s3:::ops-pipeline-eu-west-1'
+          - 'arn:aws:s3:::ops-pipeline-eu-west-1/*'
+          Sid: WhitelistedGet
+        - Action:
+          - s3:PutObject
+          Effect: Allow
+          Principal:
+            AWS:
+            - !GetAtt
+              - CodePipelineTrustRole
+              - Arn
+            - !GetAtt
+              - CodeBuildRole
+              - Arn
+          Resource:
+          - 'arn:aws:s3:::ops-pipeline-eu-west-1'
+          - 'arn:aws:s3:::ops-pipeline-eu-west-1/*'
+          Sid: WhitelistedPut
+        Version: 2012-10-17
+    Type: AWS::S3::BucketPolicy
+  SourceEventRole:
+    Description: IAM role to allow Amazon CloudWatch Events to trigger AWS CodePipeline execution
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Action: sts:AssumeRole
+          Effect: Allow
+          Principal:
+            Service:
+            - events.amazonaws.com
+          Sid: 1
+      Policies:
+      - PolicyDocument:
+          Statement:
+          - Action:
+            - codepipeline:StartPipelineExecution
+            Effect: Allow
+            Resource:
+            - !Join
+              - ':'
+              - - arn
+                - aws
+                - codepipeline
+                - !Ref 'AWS::Region'
+                - !Ref 'AWS::AccountId'
+                - !Join
+                  - '-'
+                  - - !Ref 'ProjectId'
+                    - Pipeline
+        PolicyName: CodeStarWorkerCloudWatchEventPolicy
+      RoleName: !Join
+      - '-'
+      - - CodeStarWorker
+        - !Ref 'ProjectId'
+        - CloudWatchEventRule
+    Type: AWS::IAM::Role
+  SessionTable:
+    Type: "AWS::DynamoDB::Table"
+    Properties:
+      TableName: !Join ['-', [!Ref 'ProjectId',"session-jovo"]]
+      AttributeDefinitions:
+        -
+          AttributeName: "userId"
+          AttributeType: "S"
+      KeySchema:
+        -
+          AttributeName: "userId"
+          KeyType: "HASH"
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+      Tags:
+        - Key: SITE
+          Value: !Ref 'ProjectId'
+
+

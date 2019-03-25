@@ -1,5 +1,5 @@
 {
-	"invocation": "my sample app",
+	"invocation": "mon application test",
 	"intents": [
 		{
 			"name": "homeIntent",

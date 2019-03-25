@@ -4,3 +4,4 @@ db/
 bundle/
 bundle.zip
 .env
+platforms/*
