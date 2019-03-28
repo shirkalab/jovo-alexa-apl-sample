@@ -24,19 +24,21 @@
 
 If eveyrthing works fine, say to your Alexa device "alexa, open my sample app"
 
-#### Run the project on AWS Lambda
-[![Stack description](./cloudformation/cf.png)]
-
+#### Run the project on AWS Lambda with CloudFormation
 The project will be deploy by a cloudformation [stack](./cloudformation/stack.yml) on 2 AWS region.
 Deploying on several regions is usefull for Multilanguage Skill. To reduce latency, AWS servers will use the Lambda location closest to the end-user.
 
-Before starting, have look to :
+#####Stack description
+![Stack description](./cloudformation/cf.png)
+
+
+#####Before starting, have look to :
 * [Cloudformation GitHub](https://docs.aws.amazon.com/fr_fr/codepipeline/latest/userguide/tutorials-cloudformation-github.html)
 * [Get access token from github](https://help.github.com/en/articles/creating-a-personal-access-token-for-the-command-line)
 
 #### prerequisite
 
-* create 2 S3 buckets: As cloudformation can't create S3 bucket in multiple regions, you need to manualy create 2 S3 buckets on eu-west-1 and us-east-1
+* create 2 S3 buckets: As cloudformation can't create S3 bucket in multiple regions, you need to manualy create 2 buckets on eu-west-1 and us-east-1
 * fork this project under your github account.
 
 The stack have several parameters:
