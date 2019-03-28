@@ -25,7 +25,7 @@
 If eveyrthing works fine, say to your Alexa device "alexa, open my sample app"
 
 #### Run the project on AWS Lambda
-[![Stack description](./stack/cf.png)]
+[![Stack description](./cloudformation/cf.png)]
 
 The project will be deploy by a cloudformation [stack](./cloudformation/stack.yml) on 2 AWS region.
 Deploying on several regions is usefull for Multilanguage Skill. To reduce latency, AWS servers will use the Lambda location closest to the end-user.
