@@ -1,16 +1,14 @@
 AWSTemplateFormatVersion: 2010-09-09
 Transform:
 - AWS::Serverless-2016-10-31
-#- AWS::CodeStar
 
 Parameters:
   ProjectId:
     Type: String
     Description: projectID used to create ressource
 
-
 Resources:
-  GoogleHomeFunction:
+ LambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Join ['-', [!Ref 'ProjectId',"jovo"]]
@@ -21,13 +19,11 @@ Resources:
       AutoPublishAlias: v1
       CodeUri: bundle/
       Role: !Join ['', [ "arn:aws:iam::",!Ref 'AWS::AccountId',":role/CodeStarWorker-",!Ref 'ProjectId',"-Lambda"]]
-
       Events:
         AlexaSkillEvent:
           Type: AlexaSkill
           #Properties:
           # SkillId: 'MY SKILL ID'
-
       Tags:
         SITE: !Ref 'ProjectId'
 
