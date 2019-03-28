@@ -28,11 +28,11 @@ If eveyrthing works fine, say to your Alexa device "alexa, open my sample app"
 The project will be deploy by a cloudformation [stack](./cloudformation/stack.yml) on 2 AWS region.
 Deploying on several regions is usefull for Multilanguage Skill. To reduce latency, AWS servers will use the Lambda location closest to the end-user.
 
-#####Stack description
+##### Stack description
 ![Stack description](./cloudformation/cf.png)
 
 
-#####Before starting, have look to :
+##### Before starting, have look to :
 * [Cloudformation GitHub](https://docs.aws.amazon.com/fr_fr/codepipeline/latest/userguide/tutorials-cloudformation-github.html)
 * [Get access token from github](https://help.github.com/en/articles/creating-a-personal-access-token-for-the-command-line)
 
