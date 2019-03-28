@@ -11,8 +11,8 @@ Metadata:
         default: Application
       Parameters:
       - ProjectId
-  CodeBuildImage: aws/codebuild/eb-nodejs-6.10.0-amazonlinux-64:4.0.0
-  CodeBuildImageOverride: aws/codebuild/eb-nodejs-6.10.0-amazonlinux-64:4.0.0
+ # CodeBuildImage: aws/codebuild/eb-nodejs-6.10.0-amazonlinux-64:4.0.0
+ #CodeBuildImageOverride: aws/codebuild/eb-nodejs-6.10.0-amazonlinux-64:4.0.0
 
 Parameters:
   AppName:
@@ -25,6 +25,20 @@ Parameters:
     ConstraintDescription: Project IDs must be between 2 and 15 characters, begin with a letter, and only contain lowercase letters, numbers, and hyphens (-).
     Description: Project ID.
     MaxLength: 15
+    MinLength: 2
+    Type: String
+  BucketNameEU:
+    AllowedPattern: ^[a-z]([a-z0-9-])+$
+    ConstraintDescription: Bucket name  use to store artifact in eu-west-1 region.
+    Description: S3 Bucket.
+    MaxLength: 40
+    MinLength: 2
+    Type: String
+  BucketNameUS:
+    AllowedPattern: ^[a-z]([a-z0-9-])+$
+    ConstraintDescription: Bucket name  use to store artifact in us-east-1 region.
+    Description: S3 Bucket.
+    MaxLength: 40
     MinLength: 2
     Type: String
   BranchName:
@@ -64,12 +78,13 @@ Resources:
             - s3:GetObjectVersion
             Effect: Allow
             Resource:
-            - 'arn:aws:s3:::ops-pipeline-eu-west-1'
-            - 'arn:aws:s3:::ops-pipeline-eu-west-1/*'
-            - 'arn:aws:s3:::ops-pipeline-us-east-1'
-            - 'arn:aws:s3:::ops-pipeline-us-east-1/*'
+            - !Join ['', ['arn:aws:s3:::',!Ref 'BucketNameEU']]
+            - !Join ['', ['arn:aws:s3:::',!Ref 'BucketNameEU',"/*"]]
+            - !Join ['', ['arn:aws:s3:::',!Ref 'BucketNameUS']]
+            - !Join ['', ['arn:aws:s3:::',!Ref 'BucketNameUS',"/*"]]
+
+
           - Action:
-            - codestar:SyncResources
             - lambda:CreateFunction
             - lambda:DeleteFunction
             - lambda:AddPermission
@@ -109,9 +124,9 @@ Resources:
             Effect: Allow
             Resource:
             - arn:aws:cloudformation:eu-west-1:aws:transform/Serverless-2016-10-31
-            - arn:aws:cloudformation:eu-west-1:aws:transform/CodeStar
+           # - arn:aws:cloudformation:eu-west-1:aws:transform/CodeStar
             - arn:aws:cloudformation:us-east-1:aws:transform/Serverless-2016-10-31
-            - arn:aws:cloudformation:us-east-1:aws:transform/CodeStar
+           # - arn:aws:cloudformation:us-east-1:aws:transform/CodeStar
         PolicyName: CodeStarWorkerCloudFormationRolePolicy
       RoleName: !Join
       - '-'
@@ -137,10 +152,10 @@ Resources:
           - s3:GetObjectVersion
           Effect: Allow
           Resource:
-          - 'arn:aws:s3:::ops-pipeline-eu-west-1'
-          - 'arn:aws:s3:::ops-pipeline-eu-west-1/*'
-          - 'arn:aws:s3:::ops-pipeline-us-east-1'
-          - 'arn:aws:s3:::ops-pipeline-us-east-1/*'
+          - !Join ['', ['arn:aws:s3:::',!Ref 'BucketNameEU']]
+          - !Join ['', ['arn:aws:s3:::',!Ref 'BucketNameEU',"/*"]]
+          - !Join ['', ['arn:aws:s3:::',!Ref 'BucketNameUS']]
+          - !Join ['', ['arn:aws:s3:::',!Ref 'BucketNameUS',"/*"]]
         - Action:
           - kms:GenerateDataKey*
           - kms:Encrypt
@@ -176,11 +191,10 @@ Resources:
         ComputeType: small
         EnvironmentVariables:
         - Name: S3_BUCKET
-          Value: 'ops-pipeline-eu-west-1'
+          Value: !Ref 'BucketNameEU'
         - Name: S3_BUCKETUS
-          Value: 'ops-pipeline-us-east-1'
+          Value: !Ref 'BucketNameUS'
         Image: aws/codebuild/nodejs:8.11.0
-
         Type: container
       Name: !Ref 'ProjectId'
       ServiceRole: !Ref 'CodeBuildRole'
@@ -226,10 +240,10 @@ Resources:
             - s3:PutObject
             Effect: Allow
             Resource:
-            - 'arn:aws:s3:::ops-pipeline-eu-west-1'
-            - 'arn:aws:s3:::ops-pipeline-eu-west-1/*'
-            - 'arn:aws:s3:::ops-pipeline-us-east-1'
-            - 'arn:aws:s3:::ops-pipeline-us-east-1/*'
+            - !Join ['', ['arn:aws:s3:::',!Ref 'BucketNameEU']]
+            - !Join ['', ['arn:aws:s3:::',!Ref 'BucketNameEU',"/*"]]
+            - !Join ['', ['arn:aws:s3:::',!Ref 'BucketNameUS']]
+            - !Join ['', ['arn:aws:s3:::',!Ref 'BucketNameUS',"/*"]]
 
           - Action:
             - codebuild:StartBuild
@@ -325,12 +339,11 @@ Resources:
         - Region: us-east-1
           ArtifactStore:
             Type: S3
-            Location: 'ops-pipeline-us-east-1'
+            Location: !Ref 'BucketNameUS'
         - Region: eu-west-1
           ArtifactStore:
             Type: S3
-            Location: 'ops-pipeline-eu-west-1'
-
+            Location: !Ref 'BucketNameEU'
       Name: !Join
       - '-'
       - - !Ref 'ProjectId'
