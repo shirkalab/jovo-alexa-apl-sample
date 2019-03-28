@@ -3,7 +3,7 @@
 ## Table of Contents
 
 * [Requirement](#requirement)
-* [Installation](./INSTALL.md)
+* [Install](#installation)
 * [Features](#features)
 
 
@@ -14,6 +14,9 @@
 * [Read deploy a project with jovo](https://www.jovo.tech/docs/cli/deploy)
 * [Install JOVO Cli](https://www.jovo.tech/docs/cli)
 * [Configure ASK Cli](https://developer.amazon.com/fr/docs/smapi/quick-start-alexa-skills-kit-command-line-interface.html)
+
+## Install
+[see INSTALL.MD](./INSTALL.md)
 
 ## Features
 
